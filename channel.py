@@ -45,6 +45,7 @@ def transmit(
     p_err:        float,
     eve_enabled:  bool,
     p_intercept:  float,
+    attack_type:  str = "ir",
 ) -> tuple[list[int], EveLog]:
     received = []
     log = EveLog()
@@ -53,13 +54,18 @@ def transmit(
         current = qubit
 
         if eve_enabled and random.random() < p_intercept:
-            resent, eb, ebit = eve_intercept(current)
-            log.intercepted_indices.append(i)
-            log.eve_bases.append(eb)
-            log.eve_bits.append(ebit)
-            log.resent_qubits.append(resent)
-            log.n_intercepted += 1
-            current = resent
+            if attack_type == "ir":
+                resent, eb, ebit = eve_intercept(current)
+                log.intercepted_indices.append(i)
+                log.eve_bases.append(eb)
+                log.eve_bits.append(ebit)
+                log.resent_qubits.append(resent)
+                log.n_intercepted += 1
+                current = resent
+            elif attack_type == "pns":
+                log.intercepted_indices.append(i)
+                log.n_intercepted += 1
+                # current остается неизменным!
 
         if p_err > 0 and random.random() < p_err:
             others = [p for p in POLARIZATIONS if p != current]

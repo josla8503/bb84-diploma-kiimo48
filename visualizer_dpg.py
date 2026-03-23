@@ -12,6 +12,8 @@ ROW_H = 46
 TOP = 80
 LABEL_W = 160
 
+_context_created = False
+
 def cx(ci): return LABEL_W + ci * COL_W + COL_W // 2
 def ry(rid, rows):
     for i, (r, _) in enumerate(rows):
@@ -226,7 +228,7 @@ class R:
         bob_dec = info.get("bob_dec_bits", [])[:n_show]
         ok = info.get("bob_text", "") == info.get("alice_text", "")
         y = draw_section(y, "Боб (Получатель)", GREEN,
-            f"Результат: '{info.get('bob_text', '')}'  {'✔ ИДЕАЛЬНО' if ok else '✖ ОШИБКА'}",
+            f"Результат: '{info.get('bob_text', '')}'  {'' if ok else 'ОШИБКА'}",
             [(cb, "Шифртекст", ORANGE), (pb, "Ключ BB84", GREEN), (bob_dec, "Расшифровка", BLUE)])
 
         if s.eve:
@@ -234,7 +236,7 @@ class R:
             eve_pad = info.get("eve_fake_pad", [])[:n_show]
             eve_dec = info.get("eve_dec_bits", [])[:n_show]
             draw_section(y, "Ева (Перехватчик)", RED,
-                f"Результат: '{info.get('eve_text', '')}'  ✖ МУСОР",
+                f"Результат: '{info.get('eve_text', '')}'",
                 [(cb, "Шифртекст", ORANGE), (eve_pad, "Фейк. Ключ", RED), (eve_dec, "Расшифровка", DIM)])
 
     def _grid(self, s):
@@ -339,16 +341,24 @@ _app = None
 _renderer = None
 
 def init_display(eve_present=False):
-    global _app, _renderer
+    global _app, _renderer, _context_created
     if not HAS_DPG: return False
-    dpg.create_context()
-    dpg.create_viewport(title="BB84 Visualizer", width=1210, height=815, resizable=False)
-    dpg.setup_dearpygui()
+    
+    if not _context_created:
+        dpg.create_context()
+        dpg.create_viewport(title="BB84", width=1210, height=815, resizable=False)
+        dpg.setup_dearpygui()
+        dpg.show_viewport()
+        _context_created = True
+    else:
+        dpg.set_viewport_title("BB84 Visualizer")
+        dpg.set_viewport_width(1210)
+        dpg.set_viewport_height(815)
+        
     _app = State(eve=eve_present)
     _renderer = R()
     _renderer.setup(_app)
     _renderer.rebuild(_app)
-    dpg.show_viewport()
     return True
 
 def running(): return HAS_DPG and dpg.is_dearpygui_running()
